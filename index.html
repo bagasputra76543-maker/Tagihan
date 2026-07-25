@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tagihan Cicilan</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            position: relative;
+        }
+
+        /* Tombol Tambah di Pojok Kiri Atas */
+        .btn-add {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-add:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* Total Keseluruhan di Atas Tengah */
+        .header-total {
+            text-align: center;
+            margin-bottom: 30px;
+            margin-top: 10px;
+        }
+
+        .header-total h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .header-total .total-amount {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-top: 5px;
+        }
+
+        /* Tombol Simpan Global */
+        .global-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .btn-save {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .btn-save:hover {
+            opacity: 0.9;
+        }
+
+        /* Modal / Popup Form Target Cicilan */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .form-group input {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            background-color: #cbd5e1;
+            color: #334155;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-submit {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* Tabel Cicilan */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Status Badge */
+        .status-select {
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .status-select.lunas {
+            background-color: #d1fae5;
+            color: #065f46;
+            border-color: #a7f3d0;
+        }
+
+        .status-select.belum {
+            background-color: #fef3c7;
+            color: #92400e;
+            border-color: #fde68a;
+        }
+
+        .btn-delete {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .btn-delete:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Tombol Tambah di Pojok Kiri Atas -->
+    <button class="btn-add" onclick="bukaModal()">+ Tambah Target Cicilan</button>
+
+    <!-- Total Keseluruhan di Atas Tengah -->
+    <div class="header-total">
+        <h2>Total Keseluruhan Cicilan</h2>
+        <div class="total-amount" id="totalKeseluruhan">Rp 0</div>
+    </div>
+
+    <!-- Tombol Save Global -->
+    <div class="global-actions">
+        <button class="btn-save" onclick="simpanData()">Simpan Data</button>
+    </div>
+
+    <!-- Tabel Data Cicilan -->
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Cicilan Ke-</th>
+                    <th>Jatuh Tempo</th>
+                    <th>Jumlah</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Data akan dimasukkan secara dinamis -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Form Target Cicilan Baru -->
+<div class="modal-overlay" id="modalTarget">
+    <div class="modal-content">
+        <h3>Buat Target Cicilan Baru</h3>
+        <div class="form-group">
+            <label for="inputMulai">Tanggal Mulai (Bulan Pertama):</label>
+            <input type="text" id="inputMulai" placeholder="cth: 28 Mei 2027">
+        </div>
+        <div class="form-group">
+            <label for="inputSelesai">Tanggal Selesai (Bulan Terakhir):</label>
+            <input type="text" id="inputSelesai" placeholder="cth: 28 Maret 2028">
+        </div>
+        <div class="form-group">
+            <label for="inputNominal">Nominal Per Bulan:</label>
+            <input type="number" id="inputNominal" placeholder="cth: 200000" value="200000">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="tutupModal()">Batal</button>
+            <button class="btn-submit" onclick="tambahTargetCicilan()">Tambahkan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Data Default awal (28 Juni 2026, 11 bulan, 200.000)
+    let defaultData = [
+        { tanggal: "28 Juni 2026", jumlah: 200000, status: "Belum Lunas" },
+        { tanggal: "28 Juli 2026", jumlah: 200000, status: "Belum Lunas" },
+        { tanggal: "28 Agustus 2026", jumlah: 200000, status: "Belum Lunas" },
+        { tanggal: "28 September 2026", jumlah: 200000, status: "Belum Lunas" },
+        { tanggal: "28 Oktober 2026", jumlah: 200000, status: "Belum Lunas" },
+        { tanggal: "28 November 2026", jumlah: 200000, status: "Belum Lunas" },
+        { tanggal: "28 Desember 2026", jumlah: 200000, status: "Belum Lunas" },
+        { tanggal: "28 Januari 2027", jumlah: 200000, status: "Belum Lunas" },
+        { tanggal: "28 Februari 2027", jumlah: 200000, status: "Belum Lunas" },
+        { tanggal: "28 Maret 2027", jumlah: 200000, status: "Belum Lunas" },
+        { tanggal: "28 April 2027", jumlah: 200000, status: "Belum Lunas" }
+    ];
+
+    const daftarBulan = {
+        "januari": 0, "februari": 1, "maret": 2, "april": 3, "mei": 4, "juni": 5,
+        "juli": 6, "agustus": 7, "september": 8, "oktober": 9, "november": 10, "desember": 11
+    };
+
+    function parseTanggalTeks(teks) {
+        if (!teks) return null;
+        const parts = teks.trim().toLowerCase().split(/\s+/);
+        if (parts.length < 2) return null;
+        const hari = parseInt(parts[0], 10);
+        const bulanStr = parts[1];
+        const tahun = parseInt(parts[2] || new Date().getFullYear(), 10);
+        const bulan = daftarBulan[bulanStr];
+        if (isNaN(hari) || bulan === undefined || isNaN(tahun)) return null;
+        return new Date(tahun, bulan, hari);
+    }
+
+    function formatKeTeksTanggal(date) {
+        const namaBulan = [
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+        ];
+        return `${date.getDate()} ${namaBulan[date.getMonth()]} ${date.getFullYear()}`;
+    }
+
+    function formatRupiah(angka) {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+    }
+
+    function renderTabel(items) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        let total = 0;
+
+        items.forEach((item, index) => {
+            total += Number(item.jumlah);
+            const tr = document.createElement('tr');
+            
+            tr.innerHTML = `
+                <td>Cicilan ${index + 1}</td>
+                <td><input type="text" value="${item.tanggal}" onchange="updateDataNilai()" style="border:1px solid #cbd5e1; padding:4px 8px; border-radius:4px; width:140px;"></td>
+                <td><input type="number" value="${item.jumlah}" onchange="updateDataNilai()" style="border:1px solid #cbd5e1; padding:4px 8px; border-radius:4px; width:110px;"></td>
+                <td>
+                    <select class="status-select ${item.status === 'Lunas' ? 'lunas' : 'belum'}" onchange="updateStatus(this)">
+                        <option value="Belum Lunas" ${item.status === 'Belum Lunas' ? 'selected' : ''}>Belum Lunas</option>
+                        <option value="Lunas" ${item.status === 'Lunas' ? 'selected' : ''}>Lunas</option>
+                    </select>
+                </td>
+                <td><button class="btn-delete" onclick="hapusCicilan(this)">Hapus</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('totalKeseluruhan').innerText = formatRupiah(total);
+    }
+
+    function muatData() {
+        const savedData = localStorage.getItem('dataCicilanOtomatis');
+        if (savedData) {
+            renderTabel(JSON.parse(savedData));
+        } else {
+            renderTabel(defaultData);
+        }
+    }
+
+    function simpanData() {
+        const rows = document.querySelectorAll('#tableBody tr');
+        let items = [];
+        rows.forEach(row => {
+            const tanggal = row.querySelectorAll('input')[0].value;
+            const jumlah = row.querySelectorAll('input')[1].value;
+            const status = row.querySelector('select').value;
+            items.push({ tanggal, jumlah, status });
+        });
+
+        localStorage.setItem('dataCicilanOtomatis', JSON.stringify(items));
+        alert('Data cicilan berhasil disimpan!');
+    }
+
+    function bukaModal() {
+        document.getElementById('modalTarget').style.display = 'flex';
+    }
+
+    function tutupModal() {
+        document.getElementById('modalTarget').style.display = 'none';
+    }
+
+    function tambahTargetCicilan() {
+        const tglMulaiStr = document.getElementById('inputMulai').value;
+        const tglSelesaiStr = document.getElementById('inputSelesai').value;
+        const nominal = Number(document.getElementById('inputNominal').value);
+
+        const dateMulai = parseTanggalTeks(tglMulaiStr);
+        const dateSelesai = parseTanggalTeks(tglSelesaiStr);
+
+        if (!dateMulai || !dateSelesai || isNaN(nominal)) {
+            alert('Format tanggal atau nominal tidak valid! Gunakan format seperti: 28 Mei 2027');
+            return;
+        }
+
+        if (dateSelesai < dateMulai) {
+            alert('Tanggal selesai tidak boleh lebih awal dari tanggal mulai!');
+            return;
+        }
+
+        // Ambil data lama dari tabel
+        const rows = document.querySelectorAll('#tableBody tr');
+        let items = [];
+        rows.forEach(row => {
+            items.push({
+                tanggal: row.querySelectorAll('input')[0].value,
+                jumlah: Number(row.querySelectorAll('input')[1].value),
+                status: row.querySelector('select').value
+            });
+        });
+
+        // Generate otomatis bulan per bulan dari tanggal mulai sampai tanggal selesai
+        let current = new Date(dateMulai);
+        while (current <= dateSelesai) {
+            items.push({
+                tanggal: formatKeTeksTanggal(current),
+                jumlah: nominal,
+                status: "Belum Lunas"
+            });
+            // Lanjut ke bulan berikutnya
+            current.setMonth(current.getMonth() + 1);
+        }
+
+        renderTabel(items);
+        tutupModal();
+    }
+
+    function hapusCicilan(button) {
+        button.closest('tr').remove();
+        updateDataNilai();
+    }
+
+    function updateStatus(selectElement) {
+        if (selectElement.value === 'Lunas') {
+            selectElement.className = 'status-select lunas';
+        } else {
+            selectElement.className = 'status-select belum';
+        }
+    }
+
+    function updateDataNilai() {
+        const rows = document.querySelectorAll('#tableBody tr');
+        let total = 0;
+        rows.forEach((row, idx) => {
+            row.cells[0].innerText = `Cicilan ${idx + 1}`;
+            total += Number(row.querySelectorAll('input')[1].value);
+        });
+        document.getElementById('totalKeseluruhan').innerText = formatRupiah(total);
+    }
+
+    window.onload = muatData;
+</script>
+
+</body>
+</html>
